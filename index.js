@@ -1,6 +1,6 @@
 const express = require('express');
 const cors = require('cors');
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config(); 
 
 const app = express();
@@ -20,11 +20,15 @@ const client = new MongoClient(uri, {
   },
 });
 
+let loansCollection;
+
 // Connect to MongoDB
 async function run() {
   try {
     await client.connect();
-    const db = client.db(); 
+    const db = client.db(); // default DB
+    loansCollection = db.collection('Loans'); // collection named 'Loans'
+
     console.log('✅ Connected successfully to MongoDB!');
   } catch (err) {
     console.error('❌ MongoDB connection failed:', err.message);
@@ -33,9 +37,34 @@ async function run() {
 
 run().catch(console.dir);
 
+// ---------------- Routes ----------------
+
 // Basic test route
 app.get('/', (req, res) => {
   res.send('🚀 Server is running!');
+});
+
+// GET all loans
+app.get('/loans', async (req, res) => {
+  try {
+    const loans = await loansCollection.find().toArray();
+    res.send(loans);
+  } catch (err) {
+    console.error('Error fetching loans:', err);
+    res.status(500).send({ message: 'Failed to fetch loans' });
+  }
+});
+
+// POST a new loan
+app.post('/loans', async (req, res) => {
+  try {
+    const newLoan = { ...req.body, createdAt: new Date() };
+    const result = await loansCollection.insertOne(newLoan);
+    res.send({ message: 'Loan added', loanId: result.insertedId });
+  } catch (err) {
+    console.error('Error adding loan:', err);
+    res.status(500).send({ message: 'Failed to add loan' });
+  }
 });
 
 // Start server
