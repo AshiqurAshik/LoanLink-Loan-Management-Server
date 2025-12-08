@@ -1,7 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
-require('dotenv').config(); 
+require('dotenv').config();
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -26,8 +26,8 @@ let loansCollection;
 async function run() {
   try {
     await client.connect();
-    const db = client.db(); // default DB
-    loansCollection = db.collection('Loans'); // collection named 'Loans'
+    const db = client.db(); 
+    loansCollection = db.collection('Loans'); 
 
     console.log('✅ Connected successfully to MongoDB!');
   } catch (err) {
@@ -64,6 +64,55 @@ app.post('/loans', async (req, res) => {
   } catch (err) {
     console.error('Error adding loan:', err);
     res.status(500).send({ message: 'Failed to add loan' });
+  }
+});
+
+// PATCH (update) a loan by ID
+app.patch('/loans/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const updatedFields = req.body;
+
+    if (Object.keys(updatedFields).length === 0) {
+      return res.status(400).send({ message: 'No fields to update' });
+    }
+
+    const result = await loansCollection.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updatedFields }
+    );
+
+    if (result.matchedCount === 0) {
+      return res.status(404).send({ message: 'Loan not found' });
+    }
+
+    res.send({
+      message: 'Loan updated successfully',
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (err) {
+    console.error('Error updating loan:', err);
+    res.status(500).send({ message: 'Failed to update loan' });
+  }
+});
+
+// DELETE a loan by ID
+app.delete('/loans/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const result = await loansCollection.deleteOne({ _id: new ObjectId(id) });
+
+    if (result.deletedCount === 0) {
+      return res.status(404).send({ message: 'Loan not found' });
+    }
+
+    res.send({
+      message: 'Loan deleted successfully',
+      deletedCount: result.deletedCount,
+    });
+  } catch (err) {
+    console.error('Error deleting loan:', err);
+    res.status(500).send({ message: 'Failed to delete loan' });
   }
 });
 
