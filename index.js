@@ -213,6 +213,34 @@ app.delete('/loans/:id', async (req, res) => {
 // APPLICATIONS
 // =================================================
 
+app.post('/apply-loan', async (req, res) => {
+  const result = await applicationsCollection.insertOne({
+    ...req.body,
+    status: 'pending',
+    feeStatus: 'unpaid',
+    createdAt: new Date(),
+  });
+
+  res.send({ applicationId: result.insertedId });
+});
+
+app.get('/applications/:email', async (req, res) => {
+  const email = req.params.email?.trim();
+  if (!email) return res.send([]);
+
+  try {
+    const applications = await applicationsCollection
+      .find({ borrowerEmail: { $regex: `^${email}$`, $options: 'i' } })
+      .toArray();
+
+    res.send(applications);
+  } catch (error) {
+    console.error('Error fetching applications:', error);
+    res.status(500).send({ message: 'Server error' });
+  }
+});
+
+
 
 app.get('/applications', async (req, res) => {
   const apps = await applicationsCollection.find().toArray();
