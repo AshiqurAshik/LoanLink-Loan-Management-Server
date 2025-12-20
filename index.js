@@ -192,94 +192,27 @@ app.patch('/loans/:id', async (req, res) => {
   }
 });
 
+app.delete('/loans/:id', async (req, res) => {
+  try {
+    const loanId = req.params.id;
+    const result = await loansCollection.deleteOne({
+      _id: new ObjectId(loanId),
+    });
+
+    if (result.deletedCount === 0)
+      return res.status(404).send({ message: 'Loan not found' });
+
+    res.send({ message: 'Loan deleted successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Failed to delete loan' });
+  }
+});
 
 // =================================================
 // APPLICATIONS
 // =================================================
 
-app.post('/apply-loan', async (req, res) => {
-  const result = await applicationsCollection.insertOne({
-    ...req.body,
-    status: 'pending',
-    feeStatus: 'unpaid',
-    createdAt: new Date(),
-  });
-
-  res.send({ applicationId: result.insertedId });
-});
-
-app.get('/applications/:email', async (req, res) => {
-  const email = req.params.email?.trim();
-  if (!email) return res.send([]);
-
-  try {
-    const applications = await applicationsCollection
-      .find({ borrowerEmail: { $regex: `^${email}$`, $options: 'i' } })
-      .toArray();
-
-    res.send(applications);
-  } catch (error) {
-    console.error('Error fetching applications:', error);
-    res.status(500).send({ message: 'Server error' });
-  }
-});
-
-app.patch('/applications/:id/approve', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await applicationsCollection.updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          status: 'approved',
-          approvedAt: new Date(),
-        },
-      }
-    );
-
-    res.send({ success: true, result });
-  } catch (error) {
-    res.status(500).send({ error: 'Failed to approve loan' });
-  }
-});
-
-app.patch('/applications/:id/reject', async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await applicationsCollection.updateOne(
-      { _id: new ObjectId(id) },
-      {
-        $set: {
-          status: 'rejected',
-        },
-      }
-    );
-
-    res.send({ success: true, result });
-  } catch (error) {
-    res.status(500).send({ error: 'Failed to reject loan' });
-  }
-});
-
-app.delete('/applications/:id', async (req, res) => {
-  try {
-    const appId = req.params.id;
-    const result = await applicationsCollection.deleteOne({
-      _id: new ObjectId(appId),
-    });
-
-    if (result.deletedCount === 0) {
-      return res.status(404).send({ message: 'Application not found' });
-    }
-
-    res.send({ message: 'Application cancelled successfully' });
-  } catch (err) {
-    console.error('Error deleting application:', err);
-    res.status(500).send({ message: 'Server error' });
-  }
-});
 
 app.get('/applications', async (req, res) => {
   const apps = await applicationsCollection.find().toArray();
