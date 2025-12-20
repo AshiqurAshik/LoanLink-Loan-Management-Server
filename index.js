@@ -130,70 +130,25 @@ app.post('/login', async (req, res) => {
 });
 
 // ================= GET USER BY EMAIL =================
+app.get('/users/by-email', async (req, res) => {
+  const email = req.query.email?.trim();
+  if (!email) return res.status(400).send({ message: 'Email is required' });
+
+  try {
+    const user = await usersCollection.findOne({ email });
+    if (!user) return res.status(404).send({ message: 'User not found' });
+
+    res.send([user]);
+  } catch (err) {
+    console.error('Error fetching user by email:', err);
+    res.status(500).send({ message: 'Server error' });
+  }
+});
 
 // =================================================
 // LOANS
 // =================================================
 
-app.get('/loans', async (req, res) => {
-  const loans = await loansCollection.find().toArray();
-  res.send(loans);
-});
-
-app.get('/loans/:id', async (req, res) => {
-  const loan = await loansCollection.findOne({
-    _id: new ObjectId(req.params.id),
-  });
-  res.send(loan);
-});
-
-app.post('/loans', async (req, res) => {
-  try {
-    const loanData = { ...req.body, createdAt: new Date() };
-    const result = await loansCollection.insertOne(loanData);
-    res.send({ message: 'Loan added successfully', loanId: result.insertedId });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ message: 'Failed to add loan' });
-  }
-});
-
-app.patch('/loans/:id', async (req, res) => {
-  try {
-    const loanId = req.params.id;
-    const updateData = { ...req.body, updatedAt: new Date() };
-
-    const result = await loansCollection.updateOne(
-      { _id: new ObjectId(loanId) },
-      { $set: updateData }
-    );
-
-    if (result.matchedCount === 0)
-      return res.status(404).send({ message: 'Loan not found' });
-
-    res.send({ message: 'Loan updated successfully' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ message: 'Failed to update loan' });
-  }
-});
-
-app.delete('/loans/:id', async (req, res) => {
-  try {
-    const loanId = req.params.id;
-    const result = await loansCollection.deleteOne({
-      _id: new ObjectId(loanId),
-    });
-
-    if (result.deletedCount === 0)
-      return res.status(404).send({ message: 'Loan not found' });
-
-    res.send({ message: 'Loan deleted successfully' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).send({ message: 'Failed to delete loan' });
-  }
-});
 
 // =================================================
 // APPLICATIONS
