@@ -172,6 +172,25 @@ app.post('/loans', async (req, res) => {
   }
 });
 
+app.patch('/loans/:id', async (req, res) => {
+  try {
+    const loanId = req.params.id;
+    const updateData = { ...req.body, updatedAt: new Date() };
+
+    const result = await loansCollection.updateOne(
+      { _id: new ObjectId(loanId) },
+      { $set: updateData }
+    );
+
+    if (result.matchedCount === 0)
+      return res.status(404).send({ message: 'Loan not found' });
+
+    res.send({ message: 'Loan updated successfully' });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Failed to update loan' });
+  }
+});
 
 
 // =================================================
