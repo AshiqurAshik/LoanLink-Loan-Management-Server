@@ -44,7 +44,6 @@ async function run() {
 }
 run();
 
-function verifyJWT(req, res, next) {
   const authHeader = req.headers.authorization;
   if (!authHeader) return res.status(401).send({ message: 'Unauthorized' });
 
@@ -138,6 +137,7 @@ app.get('/users/by-email', async (req, res) => {
     const user = await usersCollection.findOne({ email });
     if (!user) return res.status(404).send({ message: 'User not found' });
 
+
     res.send([user]);
   } catch (err) {
     console.error('Error fetching user by email:', err);
@@ -160,6 +160,7 @@ app.get('/loans/:id', async (req, res) => {
   });
   res.send(loan);
 });
+
 
 app.post('/loans', async (req, res) => {
   try {
@@ -192,6 +193,7 @@ app.patch('/loans/:id', async (req, res) => {
   }
 });
 
+
 app.delete('/loans/:id', async (req, res) => {
   try {
     const loanId = req.params.id;
@@ -213,6 +215,7 @@ app.delete('/loans/:id', async (req, res) => {
 // APPLICATIONS
 // =================================================
 
+
 app.post('/apply-loan', async (req, res) => {
   const result = await applicationsCollection.insertOne({
     ...req.body,
@@ -223,6 +226,7 @@ app.post('/apply-loan', async (req, res) => {
 
   res.send({ applicationId: result.insertedId });
 });
+
 
 app.get('/applications/:email', async (req, res) => {
   const email = req.params.email?.trim();
@@ -279,41 +283,31 @@ app.patch('/applications/:id/reject', async (req, res) => {
   }
 });
 
+app.delete('/applications/:id', async (req, res) => {
+  try {
+    const appId = req.params.id;
+    const result = await applicationsCollection.deleteOne({
+      _id: new ObjectId(appId),
+    });
 
+    if (result.deletedCount === 0) {
+      return res.status(404).send({ message: 'Application not found' });
+    }
+
+    res.send({ message: 'Application cancelled successfully' });
+  } catch (err) {
+    console.error('Error deleting application:', err);
+    res.status(500).send({ message: 'Server error' });
+  }
+});
 
 app.get('/applications', async (req, res) => {
   const apps = await applicationsCollection.find().toArray();
   res.send(apps);
 });
 
-app.get('/applications/:id', async (req, res) => {
-  try {
-    const appData = await applicationsCollection.findOne({
-      _id: new ObjectId(req.params.id),
-    });
-    res.send(appData);
-  } catch {
-    res.status(400).send({ message: 'Invalid ID' });
-  }
-});
 
-app.patch('/applications/:id', async (req, res) => {
-  const { status, comments, feeStatus } = req.body;
 
-  await applicationsCollection.updateOne(
-    { _id: new ObjectId(req.params.id) },
-    {
-      $set: {
-        ...(status && { status }),
-        ...(comments && { comments }),
-        ...(feeStatus && { feeStatus }),
-        updatedAt: new Date(),
-      },
-    }
-  );
-
-  res.send({ message: 'Application updated' });
-});
 
 // =================================================
 // USERS (ADMIN)
@@ -372,7 +366,7 @@ app.patch('/users/:id', verifyJWT, async (req, res) => {
     if (!result.value)
       return res.status(404).send({ message: 'User not found' });
 
-    res.send(result.value);
+    res.send(result.value); 
   } catch (err) {
     console.error(err);
     res.status(500).send({ message: 'Failed to update user' });
