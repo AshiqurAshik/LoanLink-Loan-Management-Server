@@ -240,6 +240,45 @@ app.get('/applications/:email', async (req, res) => {
   }
 });
 
+app.patch('/applications/:id/approve', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await applicationsCollection.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          status: 'approved',
+          approvedAt: new Date(),
+        },
+      }
+    );
+
+    res.send({ success: true, result });
+  } catch (error) {
+    res.status(500).send({ error: 'Failed to approve loan' });
+  }
+});
+
+app.patch('/applications/:id/reject', async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const result = await applicationsCollection.updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          status: 'rejected',
+        },
+      }
+    );
+
+    res.send({ success: true, result });
+  } catch (error) {
+    res.status(500).send({ error: 'Failed to reject loan' });
+  }
+});
+
 
 
 app.get('/applications', async (req, res) => {
