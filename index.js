@@ -149,6 +149,30 @@ app.get('/users/by-email', async (req, res) => {
 // LOANS
 // =================================================
 
+app.get('/loans', async (req, res) => {
+  const loans = await loansCollection.find().toArray();
+  res.send(loans);
+});
+
+app.get('/loans/:id', async (req, res) => {
+  const loan = await loansCollection.findOne({
+    _id: new ObjectId(req.params.id),
+  });
+  res.send(loan);
+});
+
+app.post('/loans', async (req, res) => {
+  try {
+    const loanData = { ...req.body, createdAt: new Date() };
+    const result = await loansCollection.insertOne(loanData);
+    res.send({ message: 'Loan added successfully', loanId: result.insertedId });
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Failed to add loan' });
+  }
+});
+
+
 
 // =================================================
 // APPLICATIONS
