@@ -340,6 +340,65 @@ app.patch('/applications/:id', async (req, res) => {
 // USERS (ADMIN)
 // =================================================
 
+app.get('/users', verifyJWT, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).send({ message: 'Admins only' });
+  }
+
+  const users = await usersCollection
+    .find({ role: { $in: ['borrower', 'manager'] } })
+    .toArray();
+
+  res.send(users);
+});
+
+app.get('/users/me', async (req, res) => {
+  try {
+    const user = await usersCollection.findOne({ role: 'manager' });
+    if (!user) return res.status(404).send({ message: 'Manager not found' });
+    res.send(user);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Server error' });
+  }
+});
+
+app.patch('/users/:id', verifyJWT, async (req, res) => {
+  if (req.user.role !== 'admin') {
+    return res.status(403).send({ message: 'Admins only' });
+  }
+
+  const { id } = req.params;
+  const { role, suspendReason, suspendFeedback } = req.body;
+
+  if (!role) return res.status(400).send({ message: 'Role is required' });
+
+  try {
+    const updateFields = { role };
+
+    if (role === 'suspended') {
+      updateFields.suspendReason = suspendReason || '';
+      updateFields.suspendFeedback = suspendFeedback || '';
+    } else {
+      updateFields.suspendReason = '';
+      updateFields.suspendFeedback = '';
+    }
+
+    const result = await usersCollection.findOneAndUpdate(
+      { _id: new ObjectId(id) },
+      { $set: updateFields },
+      { returnDocument: 'after' }
+    );
+
+    if (!result.value)
+      return res.status(404).send({ message: 'User not found' });
+
+    res.send(result.value); 
+  } catch (err) {
+    console.error(err);
+    res.status(500).send({ message: 'Failed to update user' });
+  }
+});
 
 // ================= START =================
 app.listen(port, () => {
