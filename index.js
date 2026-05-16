@@ -8,7 +8,16 @@ require('dotenv').config();
 const app = express();
 const port = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      'http://localhost:5173',
+      'https://loadlink-loan-website.netlify.app',
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    credentials: true,
+  }),
+);
 app.use(express.json());
 
 // ================= JWT =================
@@ -69,6 +78,9 @@ async function connectDB(req, res, next) {
       .send({ message: 'Internal Server Error: Database Connection Failed' });
   }
 }
+
+// ACTIVATING THE MIDDLEWARE TO FIX FIRST-LOAD ISSUE
+app.use(connectDB);
 
 // Apply the connection check to every request
 async function startServer() {
